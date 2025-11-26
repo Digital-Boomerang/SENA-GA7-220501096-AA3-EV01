@@ -4,8 +4,9 @@ import com.cda.certimotos.citas.entity.Cita;
 import com.cda.certimotos.citas.repository.CitaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
+import java.util.Optional;
+
 
 @Service
 public class CitaServices {
@@ -16,42 +17,39 @@ public class CitaServices {
         this.repository = repository;
     }
 
-    // Crear cita
     public Cita crearCita(Cita cita) {
+        // validar unicidad usuario+fecha+horario
+        Optional<Cita> existe = repository.findByIdUsuarioAndFechaAndIdHorario(cita.getIdUsuario(), cita.getFecha(), cita.getIdHorario());
+        if (existe.isPresent()) {
+            throw new IllegalArgumentException("El usuario ya tiene una cita para esa fecha y horario.");
+        }
         return repository.save(cita);
     }
 
-    // Listar todas las citas
-    public List<Cita> listarCitas() {
-        return repository.findAll();
-    }
+    public List<Cita> listarCitas() { return repository.findAll(); }
 
-    // Buscar por ID 
+    public Optional<Cita> buscarPorIdOptional(Long id) { return repository.findById(id); }
+
     public Cita buscarPorId(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada con id: " + id));
+        return repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Cita no encontrada con id: " + id));
     }
 
-    // Actualizar cita existente
     public Cita actualizarCita(Long id, Cita nueva) {
-
-        Cita citaExistente = repository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Cita no encontrada con id: " + id));
-
-        citaExistente.setFecha(nueva.getFecha());
-        citaExistente.setEstado(nueva.getEstado());
-        citaExistente.setIdUsuario(nueva.getIdUsuario());
-        citaExistente.setIdVehiculo(nueva.getIdVehiculo());
-        citaExistente.setIdHorario(nueva.getIdHorario());
-
-        return repository.save(citaExistente);
+        return repository.findById(id).map(citaExistente -> {
+            citaExistente.setFecha(nueva.getFecha());
+            citaExistente.setEstado(nueva.getEstado());
+            citaExistente.setIdUsuario(nueva.getIdUsuario());
+            citaExistente.setIdVehiculo(nueva.getIdVehiculo());
+            citaExistente.setIdHorario(nueva.getIdHorario());
+            return repository.save(citaExistente);
+        }).orElse(null);
     }
 
-    // Eliminar cita por ID
-    public void eliminarCita(Long id) {
-        if (!repository.existsById(id)) {
-            throw new EntityNotFoundException("No se puede eliminar. Cita no encontrada con id: " + id);
+    public boolean eliminarCita(Long id) {
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+            return true;
         }
-        repository.deleteById(id);
+        return false;
     }
 }

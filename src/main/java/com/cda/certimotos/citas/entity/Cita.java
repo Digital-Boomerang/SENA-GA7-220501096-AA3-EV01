@@ -13,7 +13,6 @@ public class Cita {
     private Long id;
 
     private LocalDate fecha;
-
     private String estado;
 
     @Column(name = "id_usuario")
@@ -27,29 +26,16 @@ public class Cita {
 
     public Cita() {}
 
-    public Cita(LocalDate fecha, String estado, Long idUsuario, Long idVehiculo, Long idHorario) {
-        this.fecha = fecha;
-        this.estado = estado;
-        this.idUsuario = idUsuario;
-        this.idVehiculo = idVehiculo;
-        this.idHorario = idHorario;
-    }
-
-    // GETTERS & SETTERS
+    // Getters y setters
     public Long getId() { return id; }
-
     public LocalDate getFecha() { return fecha; }
     public void setFecha(LocalDate fecha) { this.fecha = fecha; }
-
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
-
     public Long getIdUsuario() { return idUsuario; }
     public void setIdUsuario(Long idUsuario) { this.idUsuario = idUsuario; }
-
     public Long getIdVehiculo() { return idVehiculo; }
     public void setIdVehiculo(Long idVehiculo) { this.idVehiculo = idVehiculo; }
-
     public Long getIdHorario() { return idHorario; }
     public void setIdHorario(Long idHorario) { this.idHorario = idHorario; }
 }

@@ -2,7 +2,6 @@ package com.cda.certimotos.citas.controller;
 
 import com.cda.certimotos.citas.entity.Cita;
 import com.cda.certimotos.citas.services.CitaServices;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,46 +13,37 @@ import java.util.List;
 public class CitaController {
 
     private final CitaServices service;
-
-    public CitaController(CitaServices service) {
-        this.service = service;
-    }
+    public CitaController(CitaServices service){ this.service = service; }
 
     @PostMapping
-    public ResponseEntity<Cita> crear(@RequestBody Cita cita) {
-        return ResponseEntity.ok(service.crearCita(cita));
+    public ResponseEntity<?> crear(@RequestBody Cita c) {
+        try {
+            Cita creada = service.crearCita(c);
+            return ResponseEntity.ok(creada);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping
-    public ResponseEntity<List<Cita>> listar() {
-        return ResponseEntity.ok(service.listarCitas());
-    }
+    public ResponseEntity<List<Cita>> listar(){ return ResponseEntity.ok(service.listarCitas()); }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Cita> buscar(@PathVariable long id) {
-        try {
-            return ResponseEntity.ok(service.buscarPorId(id));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<?> obtener(@PathVariable Long id) {
+        return service.buscarPorIdOptional(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Cita> actualizar(@PathVariable long id, @RequestBody Cita cita) {
-        try {
-            return ResponseEntity.ok(service.actualizarCita(id, cita));
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Cita c) {
+        Cita actualizada = service.actualizarCita(id, c);
+        if (actualizada == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(actualizada);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable long id) {
-        try {
-            service.eliminarCita(id);
-            return ResponseEntity.noContent().build(); // 204 OK
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build(); // 404 Not Found
-        }
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        boolean ok = service.eliminarCita(id);
+        if (!ok) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok("Cita eliminada");
     }
 }
