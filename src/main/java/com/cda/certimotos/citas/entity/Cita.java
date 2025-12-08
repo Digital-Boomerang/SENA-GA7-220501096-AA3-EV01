@@ -1,6 +1,8 @@
 package com.cda.certimotos.citas.entity;
 
 import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
@@ -13,29 +15,47 @@ public class Cita {
     private Long id;
 
     private LocalDate fecha;
-    private String estado;
 
-    @Column(name = "id_usuario")
-    private Long idUsuario;
+    private String estado = "pendiente";
 
-    @Column(name = "id_vehiculo")
-    private Long idVehiculo;
+    // Cita → Usuario (muchas citas por usuario)
+    @ManyToOne
+    @JoinColumn(name = "id_usuario")
+    @JsonIgnoreProperties("citas")  // evita recursión infinita
+    private Usuario usuario;
 
-    @Column(name = "id_horario")
-    private Long idHorario;
+    // Cita → Vehiculo (un vehículo puede tener varias citas)
+    @ManyToOne
+    @JoinColumn(name = "id_vehiculo")
+    @JsonIgnoreProperties("citas")
+    private Vehiculo vehiculo;
+
+    // Cita → Horario (muchas citas por horario)
+    @ManyToOne
+    @JoinColumn(name = "id_horario")
+    @JsonIgnoreProperties("citas")
+    private Horario horario;
 
     public Cita() {}
 
-    // Getters y setters
+    // ------------------------
+    // GETTERS Y SETTERS
+    // ------------------------
+
     public Long getId() { return id; }
+
     public LocalDate getFecha() { return fecha; }
     public void setFecha(LocalDate fecha) { this.fecha = fecha; }
+
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
-    public Long getIdUsuario() { return idUsuario; }
-    public void setIdUsuario(Long idUsuario) { this.idUsuario = idUsuario; }
-    public Long getIdVehiculo() { return idVehiculo; }
-    public void setIdVehiculo(Long idVehiculo) { this.idVehiculo = idVehiculo; }
-    public Long getIdHorario() { return idHorario; }
-    public void setIdHorario(Long idHorario) { this.idHorario = idHorario; }
+
+    public Usuario getUsuario() { return usuario; }
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+
+    public Vehiculo getVehiculo() { return vehiculo; }
+    public void setVehiculo(Vehiculo vehiculo) { this.vehiculo = vehiculo; }
+
+    public Horario getHorario() { return horario; }
+    public void setHorario(Horario horario) { this.horario = horario; }
 }

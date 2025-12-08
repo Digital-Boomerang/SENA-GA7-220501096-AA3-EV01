@@ -1,6 +1,7 @@
 package com.cda.certimotos.citas.entity;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "vehiculo")
@@ -11,15 +12,27 @@ public class Vehiculo {
     @Column(name = "id_vehiculo")
     private Long id;
 
+    @ManyToOne
+    @JoinColumn(name = "id_usuario", nullable = false)
+    @JsonIgnoreProperties("vehiculos") // evita ciclos infinitos en JSON
+    private Usuario usuario;
+
+    @Column(nullable = false)
     private String placa;
 
-    @Column(name = "id_usuario")
-    private Long idUsuario;
+    public Vehiculo() {}
 
     // GETTERS Y SETTERS
 
     public Long getId() {
         return id;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
     }
 
     public String getPlaca() {
@@ -29,11 +42,7 @@ public class Vehiculo {
         this.placa = placa;
     }
 
-    public Long getIdUsuario() {
-        return idUsuario;
+    public void setId(Long id) {
+        this.id = id;
     }
-    public void setIdUsuario(Long idUsuario) {
-        this.idUsuario = idUsuario;
-    }
-    
 }

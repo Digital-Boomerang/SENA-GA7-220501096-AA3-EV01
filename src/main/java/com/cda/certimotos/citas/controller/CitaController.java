@@ -13,7 +13,10 @@ import java.util.List;
 public class CitaController {
 
     private final CitaServices service;
-    public CitaController(CitaServices service){ this.service = service; }
+
+    public CitaController(CitaServices service) {
+        this.service = service;
+    }
 
     @PostMapping
     public ResponseEntity<?> crear(@RequestBody Cita c) {
@@ -26,11 +29,15 @@ public class CitaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Cita>> listar(){ return ResponseEntity.ok(service.listarCitas()); }
+    public ResponseEntity<List<Cita>> listar() {
+        return ResponseEntity.ok(service.listarCitas());
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> obtener(@PathVariable Long id) {
-        return service.buscarPorIdOptional(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+        return service.buscarPorIdOptional(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
@@ -46,4 +53,10 @@ public class CitaController {
         if (!ok) return ResponseEntity.notFound().build();
         return ResponseEntity.ok("Cita eliminada");
     }
+
+     @GetMapping("/ocupadas")
+    public List<String> getHorasOcupadas(@RequestParam String fecha) {
+        return service.obtenerHorasOcupadasPorFecha(fecha);
+    }
+
 }

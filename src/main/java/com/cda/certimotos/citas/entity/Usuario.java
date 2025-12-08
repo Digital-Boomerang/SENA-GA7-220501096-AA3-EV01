@@ -19,14 +19,19 @@ public class Usuario {
     private String telefono;
     private String direccion;
 
-   
-    @Column(name = "id_rol")
-    private Long idRol; // 1 = cliente, 2 = admin
+    @ManyToOne
+    @JoinColumn(name = "id_rol")
+    private Rol rol; 
+    // 1 = Admin, 2 = Cliente
 
-    // GETTERS Y SETTERS
+    // GETTERS Y SETTERS CORRECTOS
 
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) { 
+        this.id = id; 
     }
 
     public String getNombre() {
@@ -42,41 +47,47 @@ public class Usuario {
     public void setApellido1(String apellido1) {
         this.apellido1 = apellido1;
     }
+
     public String getApellido2() {
         return apellido2;
     }
     public void setApellido2(String apellido2) {
         this.apellido2 = apellido2;
     }
+
     public String getDocumento() {
         return documento;
     }
     public void setDocumento(String documento) {
         this.documento = documento;
     }
+
     public String getCorreo() {
         return correo;
     }
     public void setCorreo(String correo) {
         this.correo = correo;
     }
+
     public String getTelefono() {
         return telefono;
     }
     public void setTelefono(String telefono) {
         this.telefono = telefono;
     }
+
     public String getDireccion() {
         return direccion;
     }
     public void setDireccion(String direccion) {
         this.direccion = direccion;
     }
-    public Long getIdRol() {
-        return idRol;
+
+    public Rol getRol() {
+        return rol;
     }
-    public void setIdRol(Long idRol) {
-        this.idRol = idRol;
+
+    public void setRol(Rol rol) {
+        this.rol = rol;
     }
-    
 }

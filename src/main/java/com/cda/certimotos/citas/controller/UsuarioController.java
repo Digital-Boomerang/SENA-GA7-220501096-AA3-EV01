@@ -2,11 +2,12 @@ package com.cda.certimotos.citas.controller;
 
 import java.util.List;
 
+import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import com.cda.certimotos.citas.entity.Usuario;
 import com.cda.certimotos.citas.services.UsuarioService;
-
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -19,16 +20,24 @@ public class UsuarioController {
         this.service = service;
     }
 
-    // Crear usuario (admin o cliente manual)
+    // Crear usuario (ADMIN o CLIENTE MANUAL)
     @PostMapping
-    public ResponseEntity<Usuario> crear(@RequestBody Usuario u) {
-        return ResponseEntity.ok(service.crearUsuario(u));
+    public ResponseEntity<?> crear(@RequestBody Usuario u) {
+        try {
+            return ResponseEntity.ok(service.crearUsuario(u));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
-    // Registrar cliente automáticamente (si ya existe → retorna el mismo)
+    // Registro automático de clientes (desde agendamiento)
     @PostMapping("/register")
-    public ResponseEntity<Usuario> register(@RequestBody Usuario u) {
-        return ResponseEntity.ok(service.crearClienteSiNoExiste(u));
+    public ResponseEntity<?> register(@RequestBody Usuario u) {
+        try {
+            return ResponseEntity.ok(service.crearClienteSiNoExiste(u));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // Listar todos los usuarios
@@ -40,8 +49,33 @@ public class UsuarioController {
     // Obtener usuario por ID
     @GetMapping("/{id}")
     public ResponseEntity<?> obtener(@PathVariable Long id) {
-        return service.buscarPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+
+        Optional<Usuario> usuarioOpt = service.buscarPorId(id);
+
+        if (usuarioOpt.isPresent()) {
+            return ResponseEntity.ok(usuarioOpt.get());
+        } else {
+            return ResponseEntity.status(404).body("Usuario no encontrado");
+        }
+    }
+
+    // Actualizar usuario
+    @PutMapping("/{id}")
+    public ResponseEntity<?> actualizar(@PathVariable Long id, @RequestBody Usuario usuario) {
+        try {
+            return ResponseEntity.ok(service.actualizarUsuario(id, usuario));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // Eliminar usuario
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        if (service.eliminarUsuario(id)) {
+            return ResponseEntity.ok("Usuario eliminado");
+        } else {
+            return ResponseEntity.status(404).body("Usuario no encontrado");
+        }
     }
 }
