@@ -14,13 +14,12 @@ public class Comentario {
     @Column(name = "id_comentario")
     private Long id;
 
-    @Column(name = "contenido", columnDefinition = "TEXT", nullable = false)
-    private String contenido;
+    @Column(nullable = false, length = 100)
+    private String nombre;
+
+    @Column(nullable = false, length = 300)
+    private String mensaje;
 
     @Column(name = "fecha_publicacion", nullable = false)
     private LocalDate fechaPublicacion;
-
-    @ManyToOne
-    @JoinColumn(name = "id_usuario", nullable = false)
-    private Usuario usuario;
 }

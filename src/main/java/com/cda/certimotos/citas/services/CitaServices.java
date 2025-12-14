@@ -9,7 +9,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-
 @Service
 public class CitaServices {
 
@@ -79,13 +78,20 @@ public class CitaServices {
     }
 
     public List<String> obtenerHorasOcupadasPorFecha(String fecha) {
-        LocalDate fechaCita = LocalDate.parse(fecha);
+        try {
+            LocalDate fechaCita = LocalDate.parse(fecha);
 
-        List<Cita> citas = CitaRepository.findByFecha(fechaCita);
+            // ✅ Usar la instancia inyectada
+            List<Cita> citas = repository.findByFecha(fechaCita);
 
-        return citas.stream()
-            .map(c -> c.getHorario().getHora().toString().substring(0, 5)) 
-            .toList();
+            return citas.stream()
+                    .filter(c -> c.getHorario() != null && c.getHorario().getHora() != null)
+                    .map(c -> c.getHorario().getHora().toString().substring(0, 5))
+                    .toList();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return List.of(); // Retorna lista vacía en caso de error
+        }
     }
-
 }

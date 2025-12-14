@@ -3,99 +3,196 @@ package com.cda.certimotos.citas.services;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.cda.certimotos.citas.entity.Credencial;
 import com.cda.certimotos.citas.entity.Rol;
 import com.cda.certimotos.citas.entity.Usuario;
+import com.cda.certimotos.citas.repository.CredencialRepository;
 import com.cda.certimotos.citas.repository.RolRepository;
 import com.cda.certimotos.citas.repository.UsuarioRepository;
 
 @Service
 public class UsuarioService {
 
-    private final UsuarioRepository repo;
+    private final UsuarioRepository usuarioRepo;
     private final RolRepository rolRepo;
+    private final CredencialRepository credRepo;
 
-    public UsuarioService(UsuarioRepository repo, RolRepository rolRepo) {
-        this.repo = repo;
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
+    public UsuarioService(
+            UsuarioRepository usuarioRepo,
+            RolRepository rolRepo,
+            CredencialRepository credRepo) {
+
+        this.usuarioRepo = usuarioRepo;
         this.rolRepo = rolRepo;
+        this.credRepo = credRepo;
     }
 
-    // Crear cliente automáticamente (rol = 2)
+    /* =======================================================
+       CREAR CLIENTE AUTOMÁTICO (AGENDAMIENTO)
+       ======================================================= */
     public Usuario crearClienteSiNoExiste(Usuario datos) {
 
-        Optional<Usuario> existente = repo.findByDocumento(datos.getDocumento());
-        if (existente.isPresent()) return existente.get();
+        if (datos.getDocumento() == null) {
+            throw new RuntimeException("Documento obligatorio");
+        }
 
-        // Rol 2 = CLIENTE
+        Optional<Usuario> existente = usuarioRepo.findByDocumento(datos.getDocumento());
+        if (existente.isPresent()) {
+            return existente.get();
+        }
+
         Rol rolCliente = rolRepo.findById(2L)
                 .orElseThrow(() -> new RuntimeException("Rol CLIENTE no existe"));
 
         datos.setRol(rolCliente);
-
-        return repo.save(datos);
+        return usuarioRepo.save(datos);
     }
 
-    // Crear usuario manual (admin o cliente)
+    /* =======================================================
+       CREAR USUARIO (SIN PASSWORD)
+       ======================================================= */
     public Usuario crearUsuario(Usuario usuario) {
 
-        // Validar que venga un rol correcto
         if (usuario.getRol() == null) {
             throw new RuntimeException("Debe indicar un rol válido");
         }
 
-        // Validar que el rol exista
+        validarDuplicadosCreacion(usuario);
+
         Rol rol = rolRepo.findById(usuario.getRol().getId())
-                .orElseThrow(() -> new RuntimeException("El rol indicado no existe"));
+                .orElseThrow(() -> new RuntimeException("Rol no válido"));
+
+        usuario.setRol(rol);
+        return usuarioRepo.save(usuario);
+    }
+
+    /* =======================================================
+       REGISTRO USUARIO + PASSWORD
+       ======================================================= */
+    public Usuario registrarUsuarioConPassword(Usuario usuario, String password) {
+
+        if (usuario.getRol() == null) {
+            throw new RuntimeException("Debe indicar un rol válido");
+        }
+
+        validarDuplicadosCreacion(usuario);
+
+        Rol rol = rolRepo.findById(usuario.getRol().getId())
+                .orElseThrow(() -> new RuntimeException("Rol no válido"));
 
         usuario.setRol(rol);
 
-        return repo.save(usuario);
+        Usuario guardado = usuarioRepo.save(usuario);
+
+        Credencial cred = new Credencial();
+        cred.setUsuario(guardado);
+        cred.setContrasena(encoder.encode(password));
+        credRepo.save(cred);
+
+        return guardado;
     }
 
+    /* =======================================================
+       VALIDACIONES SOLO PARA CREACIÓN
+       ======================================================= */
+    private void validarDuplicadosCreacion(Usuario usuario) {
+
+        if (usuario.getDocumento() != null &&
+                usuarioRepo.existsByDocumento(usuario.getDocumento())) {
+            throw new RuntimeException("El documento ya está registrado");
+        }
+
+        if (usuario.getCorreo() != null &&
+                usuarioRepo.existsByCorreo(usuario.getCorreo())) {
+            throw new RuntimeException("El correo ya está registrado");
+        }
+    }
+
+    /* =======================================================
+       LECTURAS
+       ======================================================= */
     public List<Usuario> listarUsuarios() {
-        return repo.findAll();
+        return usuarioRepo.findAll();
     }
 
     public Optional<Usuario> buscarPorId(Long id) {
-        return repo.findById(id);
+        return usuarioRepo.findById(id);
     }
 
-    public Optional<Usuario> buscarPorDocumento(String doc) {
-        return repo.findByDocumento(doc);
-    }
+    /* =======================================================
+       ACTUALIZAR USUARIO (CORREGIDO)
+       ======================================================= */
+    public Usuario actualizarUsuario(Long id, Usuario datos) {
 
-    // Actualizar usuario
-    public Usuario actualizarUsuario(Long id, Usuario nuevo) {
+        Usuario usuario = usuarioRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        return repo.findById(id).map(u -> {
+        /* ---------- DOCUMENTO ---------- */
+        if (datos.getDocumento() != null &&
+            !datos.getDocumento().equals(usuario.getDocumento())) {
 
-            u.setNombre(nuevo.getNombre());
-            u.setApellido1(nuevo.getApellido1());
-            u.setApellido2(nuevo.getApellido2());
-            u.setDocumento(nuevo.getDocumento());
-            u.setCorreo(nuevo.getCorreo());
-            u.setTelefono(nuevo.getTelefono());
-            u.setDireccion(nuevo.getDireccion());
-
-            // Asignación correcta del rol
-            if (nuevo.getRol() != null) {
-                Rol rol = rolRepo.findById(nuevo.getRol().getId())
-                        .orElseThrow(() -> new RuntimeException("Rol no válido"));
-
-                u.setRol(rol);
+            Optional<Usuario> otro = usuarioRepo.findByDocumento(datos.getDocumento());
+            if (otro.isPresent() && !otro.get().getId().equals(id)) {
+                throw new RuntimeException("El documento ya está registrado por otro usuario");
             }
 
-            return repo.save(u);
+            usuario.setDocumento(datos.getDocumento());
+        }
 
-        }).orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        /* ---------- CORREO ---------- */
+        if (datos.getCorreo() != null &&
+            !datos.getCorreo().equals(usuario.getCorreo())) {
+
+            Optional<Usuario> otro = usuarioRepo.findByCorreo(datos.getCorreo());
+            if (otro.isPresent() && !otro.get().getId().equals(id)) {
+                throw new RuntimeException("El correo ya está registrado por otro usuario");
+            }
+
+            usuario.setCorreo(datos.getCorreo());
+        }
+
+        /* ---------- CAMPOS SIMPLES ---------- */
+        if (datos.getNombre() != null) usuario.setNombre(datos.getNombre());
+        if (datos.getApellido1() != null) usuario.setApellido1(datos.getApellido1());
+        if (datos.getApellido2() != null) usuario.setApellido2(datos.getApellido2());
+        if (datos.getTelefono() != null) usuario.setTelefono(datos.getTelefono());
+        if (datos.getDireccion() != null) usuario.setDireccion(datos.getDireccion());
+
+        /* ---------- ROL ---------- */
+        if (datos.getRol() != null) {
+            Rol rol = rolRepo.findById(datos.getRol().getId())
+                    .orElseThrow(() -> new RuntimeException("Rol no válido"));
+            usuario.setRol(rol);
+        }
+
+        return usuarioRepo.save(usuario);
     }
 
+    /* =======================================================
+       ELIMINAR
+       ======================================================= */
     public boolean eliminarUsuario(Long id) {
-        if (repo.existsById(id)) {
-            repo.deleteById(id);
-            return true;
-        }
-        return false;
+        if (!usuarioRepo.existsById(id)) return false;
+        usuarioRepo.deleteById(id);
+        return true;
+    }
+
+    /* =======================================================
+       RECUPERACIÓN PASSWORD (SIMULADO)
+       ======================================================= */
+    public void enviarEnlaceRecuperacion(Usuario usuario) {
+        System.out.println("Enlace enviado a: " + usuario.getCorreo());
+    }
+
+    /* =======================================================
+       ADMINISTRADORES
+       ======================================================= */
+    public List<Usuario> listarAdministradores() {
+        return usuarioRepo.findByRolId(1L);
     }
 }

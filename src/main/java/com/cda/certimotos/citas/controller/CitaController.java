@@ -54,9 +54,17 @@ public class CitaController {
         return ResponseEntity.ok("Cita eliminada");
     }
 
-     @GetMapping("/ocupadas")
-    public List<String> getHorasOcupadas(@RequestParam String fecha) {
-        return service.obtenerHorasOcupadasPorFecha(fecha);
+    @GetMapping("/ocupadas")
+    public ResponseEntity<List<String>> getHorasOcupadas(@RequestParam String fecha) {
+        try {
+            List<String> horas = service.obtenerHorasOcupadasPorFecha(fecha);
+            return ResponseEntity.ok(horas);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(List.of()); // retorna array vacío en caso de error
+        }
     }
+
+    
 
 }

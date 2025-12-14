@@ -3,10 +3,11 @@ package com.cda.certimotos.citas.dto;
 import lombok.Data;
 
 @Data
-public class LoginRequest {
-
+public class RegistroAdminRequest {
+    private String nombre;
     private String correo;
-
-    // nombre sin ñ y coherente con JSON enviado desde el frontend
+    private String documento;
+    private String telefono;
     private String contrasena;
 }
+

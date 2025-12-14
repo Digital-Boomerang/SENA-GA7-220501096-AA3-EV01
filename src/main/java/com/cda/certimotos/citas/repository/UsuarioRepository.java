@@ -1,5 +1,6 @@
 package com.cda.certimotos.citas.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -21,4 +22,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByDocumento(String documento);
 
     boolean existsByCorreo(String correo);
+
+    List<Usuario> findByRolId(Long rolId);
 }
